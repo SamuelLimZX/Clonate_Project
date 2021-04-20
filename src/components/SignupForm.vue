@@ -2,7 +2,8 @@
 <div>
     <div v-if="error" class="error">{{error.message}}</div>
 
-    <form @submit.prevent="pressed">
+    <form @submit.prevent="registerButtonPressed">
+        <h2 style="text-align:center">Sign up for an account!</h2>
         <label>Display name:</label>
         <input type="name" required v-model="name" placeholder="Name">
         
@@ -10,21 +11,20 @@
         <input type="email" required v-model="email" placeholder="Email">
 
         <label>Password:</label>
-        <input type="password" required v-model="password" placeholder="Password">
+        <input v-on:blur = "validate" type="password" required v-model="password" placeholder="Password">
 
         <label>Confirm password:</label>
         <input v-on:blur = "validate" type="password" required v-model="confirmpassword" placeholder="Confirm Password">
-        <br><br>
+        <br>
         <div v-show="passwordvalidate" id ="passwordvalidate"> Passwords do not match! </div>
 
-        <label>Profile Picture</label>
-        <input type = "file" @change = "chooseFile" />
-        <img style = "width: 300px; height: auto" src = "https://via.placeholder.com/150" class = "ui image centered" id = "img">
+        <label>Profile Picture:</label>
+        <input type = "file" @change = "chooseFile" required/>
+        <img style = "width: 150px; height: auto;" src = "https://via.placeholder.com/150" class = "ui image centered" id = "img">
         <div class="terms">
             <input type="checkbox" v-model="terms" required>
             <label>I agree with the terms and conditions</label>
-        </div>
-        <br>
+        </div><br>
         <div class="signup">
             <button type="submit">Sign up</button>
         </div>
@@ -60,28 +60,46 @@ export default {
             const objectURL = URL.createObjectURL(imgfile)
             document.getElementById('img').src = objectURL;
         },
-        async pressed() {
-            try {
-                fb.auth().createUserWithEmailAndPassword(this.email, this.password).then(cred => {
-                    fb.storage().ref('users/' + cred.user.uid + '/profile.jpg').put(imgfile).then(() => {   
-                        
-                        console.log('photo successfully uploaded');
-                        fb.firestore().collection("users").doc(cred.user.uid).set({
-                            "name": this.name,
-                            "clothes_donated": 0,
-                            "points": 0,
-                            "auth": "normal"
-                            // "profile_pic": ""
-                        }).then(() => {
-                            this.$router.replace({name: 'HomePageAftLogin'});
-                        })
-                    })
-                    
-                });
-            } catch(err) {
-                console.log(err)
+        async registerButtonPressed(e) {
+             if (this.passwordvalidate) {
+                e.preventDefault();
+                alert("Your passwords do not match!")
+                return false;
             }
-
+            fb
+            .auth()
+            .createUserWithEmailAndPassword(this.email, this.password)
+            .then(cred => {
+                fb
+                .storage()
+                .ref('users/' + cred.user.uid + '/profile.jpg')
+                .put(imgfile)
+                .then(() => {
+                    console.log('photo successfully uploaded');
+                    fb
+                    .firestore()
+                    .collection('users')
+                    .doc(cred.user.uid)
+                    .set({
+                        "name": this.name,
+                        "clothes_donated": 0,
+                        "points": 0,
+                        "email": this.email,
+                    }).then(() => {
+                        fb.firestore().collection('useremail').doc(this.email).set({
+                            "uid": cred.user.uid,
+                        }).then(() => {
+                            fb
+                            .auth()
+                            .signOut()
+                            .then(() => {
+                                alert("Your account has been created! You can now log in with your newly created account :)");
+                                this.$router.push('/LogIn')
+                            }).catch((error) => {alert(error);});
+                    }).catch((error) => {alert(error);});
+                    }).catch((error) => {alert(error);});
+                }).catch((error) => {alert(error);});
+            }).catch((error) => {alert(error);});
         },
 
 
@@ -130,7 +148,7 @@ input {
     font-family: Roboto;
     font-style: normal;
     font-weight: normal;
-    padding: 10px 6px;
+    padding: 6px 6px;
     width: 100%;
     box-sizing: border-box;
     border: 1px solid #E8E8E8;
@@ -143,21 +161,23 @@ input {
 input[type="checkbox"] {
     display: inline-block;
     position: relative;
-    top: 2px;
-    margin: 0 10px 0 0;
+    margin: 0 8px 0 0;
     width: 16px;
 }
 
 button {
     background: #87EBD3;
-    color: white;
-    font-size: 15px;
-    font-weight: bold;
-    font-family: Arial, Helvetica, sans-serif;
+    color:white;
+    transition-duration: 0.4s;
     text-align: center;
-    border-radius: 5px;
+    border: none;
     width: 100%;
     height: 40px;
+}
+
+button:hover {
+  background-color: rgb(212, 212, 212);
+  color: black;
 }
 
 .error {

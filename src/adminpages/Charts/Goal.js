@@ -12,7 +12,7 @@ export default {
                 labels:["Donated", "Remaining"],
                 datasets: [{
                     data:[],
-                    backgroundColor: ["#2D8BBA","grey"],
+                    backgroundColor: ["#2D8BBA","#BEBEBE"],
                     borderWidth:0,
                 }]
             },
@@ -37,11 +37,9 @@ export default {
     methods: {
         fetchItems() {
             var db = fb.firestore();
-            // var curuser = fb.auth().currentUser;
-            //uid = curuser.uid; 
-            var uid = "HAXIeBjEPnzGcTdL8Mbk";//*********** change this later
+            var uid = fb.auth().currentUser.uid;
             var curcount, goal,d ,curmonth;
-            db.collection('partners').doc(uid).get().then(doc => {
+            db.collection('partners').doc(uid).onSnapshot(doc => {
                 d = new Date();
                 curmonth = d.getMonth();   
                 curcount = doc.data().clothes_donated[curmonth];
@@ -51,20 +49,32 @@ export default {
                     curcount = goal;
                 }
                 goal = goal - curcount;
+                this.datacollection.datasets[0].data = [];
                 this.datacollection.datasets[0].data.push(curcount);
                 this.datacollection.datasets[0].data.push(goal);
-            }).then(() => {
                 this.renderChart(this.datacollection, this.options);
-            })
+            });
+            // }).then(() => {
+            //     this.renderChart(this.datacollection, this.options);
+            // })
+            
         },
         
     },
     created() {
-        this.addPlugin({
-            id: 'my-plugin',
-            beforeDraw: plugin
-        })
-        this.fetchItems();
+
+        fb.auth().onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in.
+                this.addPlugin({
+                    id: 'my-plugin',
+                    beforeDraw: plugin
+                })
+                this.fetchItems();
+            } else {
+                // No user is signed in.
+            }
+          });
     },
 }
 

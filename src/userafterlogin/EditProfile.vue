@@ -1,25 +1,23 @@
 <template>
     <div>
         <TopNavAftLogin></TopNavAftLogin>
-        <UserStats style = "float: left; width: 60%"></UserStats>
-        <EditProfileInputs style = "float: left; width: 40%"></EditProfileInputs>
 
-        <Footer style = "clear: left;"></Footer>
+        <EditProfileInputs style = "padding-bottom: 50px;"></EditProfileInputs>
+        
+        <FooterAftLogin style = "position: fixed; bottom:0; width: 100%;"></FooterAftLogin>
     </div>
 
 </template>
 
 <script>
 import TopNavAftLogin from './TopNavAftLogin.vue'
-import UserStats from './UserStats.vue'
-import Footer from '../components/Footer.vue'
+import FooterAftLogin from './FooterAftLogin.vue'
 import EditProfileInputs from './EditProfileInputs.vue'
 
 export default {
     components: {
         TopNavAftLogin,
-        UserStats,
-        Footer,
+        FooterAftLogin,
         EditProfileInputs
     },
     data() {

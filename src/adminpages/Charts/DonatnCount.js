@@ -10,7 +10,7 @@ export default {
             months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
             labels: [],
             datasets: [{
-                backgroundColor: "#87ebd3",
+                backgroundColor: "#2D8BBA",
                 // ["#3e95cd","#8e5ea2","#3cba9f","#e8c3b9","#c45850","#ffdb58"],
                 data: []
               }]
@@ -37,9 +37,7 @@ export default {
   methods: {
     fetchItems: function () {
         var db = fb.firestore();
-        // var curuser = fb.auth().currentUser;
-        //uid = curuser.uid; 
-        var uid = "HAXIeBjEPnzGcTdL8Mbk";//*********** change this later
+        var uid = fb.auth().currentUser.uid;
         var clothesarr, curmonth, d, ds, start;
         db.collection('partners').doc(uid).get().then(doc => {
             clothesarr = doc.data().clothes_donated;
@@ -67,7 +65,14 @@ export default {
     }
   },
   created () {
-    this.fetchItems()
+    fb.auth().onAuthStateChanged((user) => {
+      if (user) {
+          // User is signed in.
+          this.fetchItems()
+      } else {
+          // No user is signed in.
+      }
+    });
   }
 }
 

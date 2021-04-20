@@ -2,7 +2,7 @@
   <div>
     <TopNavAftLogin></TopNavAftLogin>
 
-    <b-container fluid class="mt-5 mb-5">
+    <b-container fluid class="mt-5 mb-5 animated zoomIn">
       <b-row align-h="center">
         <h1>Redeem your points</h1>
       </b-row>
@@ -49,7 +49,7 @@
                   href="#"
                   id="button"
                   class="mt-auto"
-                  v-on:click="pointsRedeemed(1000); redeem()"
+                  v-on:click="openForm(); pointsRedeemed(1000);"
                   >Redeem</b-button
                 >
               </b-card-text>
@@ -70,16 +70,15 @@
                   href="#"
                   id="button"
                   class="mt-auto"
-                  v-on:click="pointsRedeemed(1800); redeem()"
+                  v-on:click="openForm(); pointsRedeemed(1800);"
                   >Redeem</b-button
                 >
               </b-card-text>
             </b-card>
           </b-card-group>
+          </b-col>
+          <div style = "padding: 50px;">
 
-          <p style="text-align: center">
-            The e-voucher will be sent to your email.
-          </p>
           <br />
           <p><strong>Terms and conditions:</strong></p>
 
@@ -99,18 +98,28 @@
               Promo code is to be used for one-time redemption only.
             </li>
           </ul>
-        </b-col>
+          </div>
+        
       </b-row>
     </b-container>
+    <div class="form-popup" id="setgoal">
+      <h3 style = "font-family: Helvetica, sans-serif; text-align: center; padding: 20px;">Are you sure you would like to claim {{vouchervalue}} for {{pointsrequired}} points?</h3>
+      <button type="submit" class="btn" @click = "redeem(); makeid(9); sendEmail()">Yes</button>
+      <br/>
+      <button type="button" class="btn cancel" @click="closeForm()">No</button>
+      
+    </div>
 
-    <Footer></Footer>
+    <FooterAftLogin style = "position: fixed; bottom:0; width: 100%; z-index:100;"></FooterAftLogin>
   </div>
 </template>
 
 <script>
 import TopNavAftLogin from "./TopNavAftLogin.vue";
-import Footer from "../components/Footer.vue";
+import FooterAftLogin from './FooterAftLogin.vue';
 import fb from "firebase";
+import emailjs from "emailjs-com";
+import {WOW} from 'wowjs';
 
 export default {
   data() {
@@ -121,23 +130,41 @@ export default {
       userpoints: "",
       merchantname: "",
       merchantlink: "",
-      pointsrequired: ""
+      pointsrequired: "",
+      username: "",
+      email: "",
+      vouchercode: "",
+      vouchervalue: "",
     }
   },
   
   components: {
-    Footer,
+    FooterAftLogin,
     TopNavAftLogin,
   },
 
     methods: {
-    fetchItems: function () {
+    openForm() {
+      document.getElementById("setgoal").style.display = "block";
+    },
+
+    closeForm() {
+      document.getElementById("setgoal").style.display = "none";
+    },
+    
+    fetchItems: function (user) {      
+      this.userid = user.uid;
+      fb.firestore().collection('users').doc(user.uid).get().then(snapshot => {
+        this.currUser = snapshot.data();
+        this.userpoints = snapshot.data().points;
+      })
+
       var merchantsRef = fb.firestore().collection("merchants");
       merchantsRef.get().then((snapshot) => {
         let item = {};
         snapshot.docs.forEach((doc) => {
           item = doc.data();
-          if (doc.id == this.$route.params.id) {
+          if (doc.id == this.$route.query.id) {
           this.datapacket.push(item);
           this.merchantname = doc.data().name;
           this.merchantlink = doc.data().link;
@@ -145,10 +172,7 @@ export default {
         });
       });
 
-      fb.firestore().collection('users').doc(this.userid).get().then(snapshot => {
-        this.currUser = snapshot.data();
-        this.userpoints = snapshot.data().points;
-      })
+
     },
 
     redeem: function () {
@@ -157,39 +181,143 @@ export default {
       } else {
         this.userpoints = this.userpoints - this.pointsrequired;
         this.currUser.points = this.userpoints;
-        alert('Your redemption is successful');
+        alert("Your redemption is successful!\nThe voucher has been sent to your email! :)");
 
-        // Updating new number of points user has in firebase
         fb.firestore().collection("users")
         .doc(this.userid)
-        .set(this.currUser)
-        // .then(() => this.$router.push({ path: "/HomePageAftLogin" }));
+        .set(this.currUser)     
+        this.username = this.currUser.name;
+        this.email = this.currUser.email;
       }
+      this.closeForm();
     },
 
     pointsRedeemed: function(arg) {
       this.pointsrequired = arg;
-    }
+      this.vouchervalue = this.pointsrequired == 1000 ? "$10" : "$20"
+    },
+
+    sendEmail: function() {
+      var templateParams = {
+        to_name: this.username,
+        to_email: this.email,
+        vouchercode: this.vouchercode,
+        merchantname: this.merchantname,
+        merchantlink: this.merchantlink,
+        vouchervalue: this.pointsrequired == 1000 ? "$10" : "$20",
+      };
+      try {
+        emailjs.send(
+          "service_llib5v9",
+          "template_el2m4wc",
+          templateParams,
+          "user_tFlL3d9QPsaCEnksoYdjF"
+        );
+      } catch (error) {
+        console.log({ error });
+      }
+    },
+
+    makeid: function(length) {
+      var result = [];
+      var characters =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      var charactersLength = characters.length;
+      for (var i = 0; i < length; i++) {
+        result.push(
+          characters.charAt(Math.floor(Math.random() * charactersLength))
+        );
+      }
+      this.vouchercode = result.join("");
+    },
   },
   
+  // lifecycle
+  mounted() {
+  new WOW().init();
+  },
+
   created() {
-    this.userid = fb.auth().currentUser.uid;
-    this.fetchItems();
+    // this.userid = fb.auth().currentUser.uid;
+
+     fb.auth().onAuthStateChanged((user) => {
+  if (user) {
+    // User is signed in.
+    this.fetchItems(user);
+  } else {
+    // No user is signed in.
+  }
+});
   }
 };
 </script>
 
 
 <style scoped>
+
 #button {
-  background-color: #87ebd3;
-  color: #ffff;
+  background-color: #87ebd3!important;
+  color: #4d4b4b!important;
   border: none;
   transition-duration: 0.4s;
+  text-transform: none;
 }
 
 #button:hover {
-  background-color: rgb(212, 212, 212);
-  color: black;
+  background-color: rgb(212, 212, 212)!important;
+  color: rgb(255, 255, 255)!important;
+}
+
+
+.form-popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* bring your own prefixes */
+  /* border: 3px solid #f1f1f1; */
+  z-index: 9;
+  height: 50%;
+}
+.open-button:hover {
+  opacity: 1;
+  background-color: #17df7b;
+  /* 2D8BBA */
+}
+
+.form-popup .btn:hover {
+    opacity: 1;
+    background-color: #17df7b;
+}
+
+/* submit button */
+.form-popup .btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  width: 30%;
+  opacity: 0.8;
+  transform: translateX(120%);
+  margin: 20px 0px 0px 0px; /*top right bot left */
+}
+
+/* Add a red background color to the cancel button */
+.form-popup .cancel {
+  background-color: rgb(192, 35, 35);
+}
+
+.form-popup .cancel:hover {
+    opacity: 1;
+    background-color: red;
+}
+
+.form-popup {
+  padding: 10px;
+  background-color: white;
+}
+
+li {
+  margin-bottom: 20px;
 }
 </style>

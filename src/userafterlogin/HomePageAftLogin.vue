@@ -4,59 +4,92 @@
 
     <b-container fluid class="mt-5 mb-5">
       <b-row align-h="center">
-        <h1>Welcome Back, {{username}}!</h1>
+        <h1 class="animated fadeInUp delay-1s fast">Welcome Back, {{username}}!</h1>
       </b-row>
 
      <b-row align-h="center" class="mt-4">
-        <h4 style="color:gray">Where would you like to donate?</h4>
+        <h4 style="color:gray" class="animated fadeInUp delay-1s fast">Where would you like to donate?</h4>
       </b-row>
 
-      <b-row align-h="center" class="mt-5 mb-5">
+      <b-row align-h="center" class="mt-5 mb-5 animated fadeInUp delay-1s fast">
                 <!-- Dropdown for sorting -->
-        
-        <div class="mr-2">Sort by:</div>
-        <b-form-select v-model="selected" :options="options" id="formformat"
-          >Sort by</b-form-select
+                <b-col align-v="center" class="mr-2" cols="1">
+          <b-row align-h="end" class="mt-1">
+          <p>Filter by:</p>
+          </b-row>
+        </b-col>
+        <b-col align-v="center"  cols="2">
+          <b-row align-h="start">
+        <b-form-select v-model="filterselect" :options="filteroptions" id="formformat"
+          >Filter by</b-form-select
         >
+          </b-row>
+        </b-col>
+        
+        
+        <b-col align-v="center" class="mr-2"  cols="1">
+          <b-row align-h="end" class="mt-1">
+          <p>Sort by:</p>
+          </b-row>
+        </b-col>
+        <b-col align-v="center" cols="2">
+          <b-row align-h="start">
+        <b-form-select v-model="selected" :options="options" id="formformat"
+          >Sort by</b-form-select>
+          </b-row>
+        </b-col>
+
       </b-row>
+
+
 
       <b-row class="mt-5 mb-5"></b-row>
 
-      <b-row class="mt-5">
-
-        <b-col v-for="ele in sortedArray" :key="ele.name">
-          <b-card-group deck>
-            <b-card
+      <b-row align-h="center" class="mt-5 align-items-stretch animated fadeInLeft slow" cols="4">
+        <b-col v-for="ele in sortedArray" :key="ele.name" class="mb-3 ml-4 mr-4">
+          <b-row align-h="center">
+          <b-card-group deck class="h-100">
+            <a v-bind:href = "ele.map_link" target = "_blank">
+            <!-- <b-card
               v-bind:img-src="ele.imageURL"
+              body-class="d-flex flex-column"
               img-alt="Card image"
               img-top
               img-height="300"
               img-width="200"
-            >
-              <b-card-text class="text-center">
+            > -->
+
+            <b-card id="cardops" body-class="d-flex flex-column" fluid>
+            <b-img v-bind:src="ele.imageURL" fluid id="imgops"></b-img>
+
+              <b-card-text style = "color: black;" class="text-center mt-4">
                 <h4>{{ele.name}}</h4>
                 Address: <br>{{ele.address}}<br><br>
 
                 Opening Hours: <br>{{ele.openinghrs}}
               </b-card-text>
             </b-card>
+            </a>
           </b-card-group>
+          </b-row>
         </b-col>
       </b-row>
+      <div style = "padding-top: 50px"/>
     </b-container>
 
-    <Footer></Footer>
+    <FooterAftLogin style = "position: fixed; bottom:0; width: 100%;"></FooterAftLogin>
   </div>
 </template>
 
 <script>
 import TopNavAftLogin from "./TopNavAftLogin.vue";
-import Footer from "../components/Footer.vue";
-import fb from "firebase"
+import FooterAftLogin from './FooterAftLogin.vue';
+import fb from "firebase";
+import {WOW} from 'wowjs';
 
 export default {
   components: {
-    Footer,
+    FooterAftLogin,
     TopNavAftLogin,
   },
 
@@ -76,19 +109,36 @@ export default {
           text: "Descending",
         },
       ],
+    filteroptions: [
+      {
+        value: "All",
+        text: "All"
+      },
+      {
+        value: "Community Clubs",
+        text: "Community Clubs"
+      },
+      {
+        value: "Sports Centres",
+        text: "Sports Centres"
+      }
+    ],
+    filterselect: "All"
     };
   },
   methods: {
-    fetchItems: function() {
-      fb.firestore().collection('partners').get().then(snapshot => {
+    fetchPlaces: function() {
+fb.firestore().collection('partners').get().then(snapshot => {
         let item = {}
         snapshot.docs.forEach(doc => {
           item = doc.data()
           this.partners.push(item)
         })
-      }),
+      });
+    },
+    fetchItems: function(user) {
+      this.userid = user.uid;
       fb.firestore().collection('users').doc(this.userid).get().then(snapshot => {
-        console.log(this.userid)
         this.username = snapshot.data().name;
         this.username = this.username.charAt(0).toUpperCase() + this.username.slice(1);
       })
@@ -97,7 +147,6 @@ export default {
 
   computed: {
     sortedArray: function () {
-      console.log("new");
       var newArray = this.partners;
       function compareAsc(a, b) {
         if (a.name < b.name) return -1;
@@ -110,21 +159,57 @@ export default {
         if (a.name < b.name) return 1;
         return 0;
       }
-      console.log(newArray);
-      if (this.selected == "Ascending") {
+      if (this.selected == "Ascending" && this.filterselect == "All") {
         return newArray.sort(compareAsc);
-      } else {
+      } else if (this.selected == "Descending" && this.filterselect == "All") {
         return newArray.sort(compareDesc);
+      } else if (this.selected == "Ascending") {
+        newArray = [];
+        for (let i = 0; i < this.partners.length; i++) {
+          if (this.filterselect == "Community Clubs" && this.partners[i].category == "CC") {
+            newArray.push(this.partners[i]);
+          } else if (this.filterselect == "Sports Centres" && this.partners[i].category == "sports") {
+            newArray.push(this.partners[i]);
+          }
+        }
+
+        return newArray.sort(compareAsc);
+
+      } else if (this.selected == "Descending") {
+        newArray = [];
+        for (let i = 0; i < this.partners.length; i++) {
+          if (this.filterselect == "Community Clubs" && this.partners[i].category == "CC") {
+            newArray.push(this.partners[i]);
+          } else if (this.filterselect == "Sports Centres" && this.partners[i].category == "sports") {
+            newArray.push(this.partners[i]);
+          }
+        }
+
+        return newArray.sort(compareDesc);
+
+      } else {
+        return newArray.sort(compareAsc);
       }
     },
   },
 
 
   created() {
-    this.userid = fb.auth().currentUser.uid;
-    this.fetchItems()
-    console.log(this.partners)
-  }
+
+    fb.auth().onAuthStateChanged((user) => {
+      if (user) {
+        this.fetchPlaces();
+        this.fetchItems(user);
+      } else {
+        // No user is signed in.
+      }
+    });
+
+  },
+
+ mounted() {
+  new WOW().init();
+  },
 };
 </script>
 
@@ -147,6 +232,16 @@ export default {
 }
 
 #formformat {
-  width: 10%;
+  width: 80%;
+}
+
+#imgops {
+  height: 200px;
+  width: 350px;
+}
+
+#cardops {
+  height: 440px;
+  width: auto;
 }
 </style>

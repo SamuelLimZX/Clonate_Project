@@ -3,10 +3,10 @@
   <b-container fluid>
     <b-row>
       <b-col>
-        <b-img fluid src="https://i.imgur.com/fR3eGsd.jpg" alt="Image 1"></b-img>
+        <b-img fluid src="https://firebasestorage.googleapis.com/v0/b/jobit-38c72.appspot.com/o/clonateimages%2Fclothing-donation-image.jpg?alt=media&token=db99a6a3-9862-449d-808e-7849abcd876e" alt="Image 1" id="image" class="animated fadeInLeft"></b-img>
       </b-col>
       
-      <b-col fluid class="align-self-center">
+      <b-col fluid class="align-self-center animated fadeInRight">
         <b-form fluid @submit.prevent="pressed">
         <h1 style="text-align:center">Login</h1>
         <b-form-group
@@ -41,7 +41,7 @@
           <p id = "text2">
             <span>Don't have an account? </span>
             <span id = "text3">
-              <router-link id="text3" to=/SignUp exact>Join free today!</router-link>
+              <router-link id="text3" to=/SignUp exact>Join us today!</router-link>
             </span>             
           </p>
         </b-form>
@@ -67,40 +67,37 @@ export default {
   created() {
     fb.auth().onAuthStateChanged(userAuth => {
       if (userAuth) {
-        var auth = userAuth.auth;
-        if (auth == "normal") {
-          this.$router.replace({ name: "HomePageAftLogin" }) //changing the name here would redirect the user to the name of the page
-        } else {
-          this.$router.replace({ name: "Home" })
-        }
+        fb.auth()
+          .currentUser.getIdTokenResult()
+          .then(tokenResult => {
+            console.log(tokenResult.claims);
+          });   
       }
     })
-      //   fb.auth()
-      //     .currentUser.getIdTokenResult()
-      //     .then(tokenResult => {
-      //       console.log(tokenResult.claims);
-      //     });
-      // }
-    
   },
+
   methods: {
     async pressed() {
-      try {
-        fb.auth()
+      fb.auth()
           .signInWithEmailAndPassword(this.email, this.password)
-          .then(
-            //conditional statement to check auth
-            this.$router.replace({ name: "HomePageAftLogin" }) //changing the name here would redirect the user to the name of the page
-          )
-      } catch (error) {
-        console.log(error)
-        this.error = error;
-        alert(this.error);
-      }      
+          .then(() => {
+            fb
+            .auth()
+            .currentUser
+            .getIdTokenResult()
+            .then(({claims}) => {
+              if (claims.admin) {
+                this.$router.push('AdminHomePage')
+              } else {
+                this.$router.push('HomePageAftLogin')
+              }
+            }).catch((error) => {alert(error);});
+          }).catch((error) => {alert(error);});
     },
   },
 };
 </script>
+
 
 <style scoped>
 .error {
@@ -108,17 +105,23 @@ export default {
   font-size: 18px;
 }
 
+#image {
+  width:100%;
+  height: 100%;
+}
+
 button {
-  background-color: #87ebd3;
-  color: #ffff;
+  background-color: #87ebd3!important;
+  color: rgb(255, 255, 255)!important;
   border: none;
   transition-duration: 0.4s;
   width: 200px;
+  text-transform: none;
 }
 
 button:hover {
-  background-color: rgb(212, 212, 212);
-  color: black;
+  background-color: rgb(212, 212, 212)!important;
+  color: black!important;
 }
 
 #forgetpw {

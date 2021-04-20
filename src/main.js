@@ -1,3 +1,6 @@
+import '@fortawesome/fontawesome-free/css/all.min.css'
+import 'bootstrap-css-only/css/bootstrap.min.css'
+import 'mdbvue/lib/css/mdb.min.css'
 import Vue from 'vue'
 import App from './App.vue'
 import Routes from './routes.js'
@@ -17,6 +20,17 @@ Vue.use(IconsPlugin)
 Vue.config.productionTip = false
 Vue.use(VueRouter)
 
+// Integrating Google Maps into app
+import * as VueGoogleMaps from 'vue2-google-maps'
+ 
+Vue.use(VueGoogleMaps, {
+  load: {
+    key: 'AIzaSyDtr6cQZ-bMR-dibwF9m6eE3oS9Gc9S3b4',
+    libraries: 'places',
+  },
+})
+
+
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 var firebaseConfig = {
   apiKey: "AIzaSyDtr6cQZ-bMR-dibwF9m6eE3oS9Gc9S3b4",
@@ -29,6 +43,12 @@ var firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
+
+// wowjs
+import {WOW} from 'wowjs';
+import 'animate.css';
+
 
 const myRouter = new VueRouter({
   routes: Routes,

@@ -1,65 +1,114 @@
 <template>
     <div>
         <TopNavAftLogin></TopNavAftLogin>
-        <UserStats style = "float: left; width: 60%"></UserStats>
-        <div class="justify-content-center">
-            <b-container style = "margin-top: 100px;">
+        <b-row>
+        <b-col>
+        <UserStats class="wow fadeInLeft"></UserStats>
+        </b-col>
+        <b-col class="mt-4 mr-5" cols="5">
+            <b-container class="mt-4 wow fadeInUp">
                 <b-row align-h="center">
-                <b-avatar href="#foo" :src= "profilepic" size="11em"></b-avatar>
+                <b-avatar :to="{ path: '/EditPhoto'}" :src= "profilepic" size="11em" id="avatar"></b-avatar>
                 </b-row>
                 
-                <p class="text-center" style="font-weight:bold; color: #616161; font-size: 30px; margin-top: 10px;">Jessica</p>
-                
-                <p class="text-center" style="color: #616161; font-size: 25px;"> 2,400 points
+                <b-row align-h="center">
+                <p class="text-center" style="font-weight:bold; color: #616161; font-size: 30px; margin-top: 10px;">{{username}}</p>
+                </b-row>
+
+                <b-row>
+                    <b-col>
+                        <b-row align-h="end" align-v="end" class="mt-2">
+                <p style="color: #616161; font-size: 25px;"> {{userpoints}} points</p> 
+                        </b-row>          
+                    </b-col>
+
+                    <b-col cols="5" class="ml-2">
+                        <b-row>
                 <img 
-                src="../assets/pointsanimate.png"
-                style="float: center; margin-left: 5px;"        
+                src="../assets/pointsanimate.png"    
                 />
-                </p>
+                        </b-row>
+                    </b-col>
+                </b-row>
 
-                <br>
+                <b-row align-h="center">
+                <b-button
+          id="button"
+          class="btn btn-primary mx-auto d-block mb-3 mt-3"
+          @click="$router.push('MerchantPage')"
+          >Redeem Points</b-button
+        >
+                </b-row>
 
-                <b-button id="button" type="submit" class="btn btn-primary mx-auto d-block">Redeem Points</b-button>
+                <b-row>
 
-                <br>
-
-                <b-button id="button" type="submit" class="btn btn-primary mx-auto d-block">Edit Profile</b-button>
-                
-                </b-container>
-                </div>
-        <Footer style = "clear: left;"></Footer>
+        <b-button
+          id="button"
+          class="btn btn-primary mx-auto d-block mb-3"
+          @click="$router.push('EditProfile')"
+          >Edit Profile</b-button
+        >  
+                </b-row>
+        </b-container>
+        </b-col>
+        </b-row>
+        <div style = "padding-top: 100px"></div>
+        <FooterAftLogin id="try" style = "position: fixed; bottom:0; width: 100%;"></FooterAftLogin>
     </div>
 </template>
 
 <script>
 import TopNavAftLogin from './TopNavAftLogin.vue'
 import UserStats from './UserStats.vue'
-import Footer from '../components/Footer.vue'
+import FooterAftLogin from './FooterAftLogin.vue'
 import fb from 'firebase'
+import {WOW} from 'wowjs';
 
 export default {
     components: {
         TopNavAftLogin,
         UserStats,
-        Footer,
+        FooterAftLogin,
     },
     data() {
         return {
             uid: "",
             profilepic: "",
+            username: "",
+            userpoints: "",
         }
     },
     methods: {
         getprofilepic() {
             fb.storage().ref('users/' + this.uid + '/profile.jpg').getDownloadURL().then(imgURL  => {
-                // document.getElementById('profilepic').src = imgURL;
                 this.profilepic = imgURL;
             })
         },
+        getuserinfo() {
+            fb.firestore().collection('users').doc(this.uid).get().then(snapshot => {
+                this.username = snapshot.data().name;
+                this.username = this.username.charAt(0).toUpperCase() + this.username.slice(1);
+                this.userpoints = snapshot.data().points;
+            })
+        },
     },
+
+    mounted() {
+        new WOW().init();
+    },
+
     created() {
-        this.uid = fb.auth().currentUser.uid;
-        this.getprofilepic();
+        fb.auth().onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in.
+                this.uid = fb.auth().currentUser.uid;
+                this.getprofilepic();
+                this.getuserinfo();
+            } else {
+                // No user is signed in.
+            }
+        });
+
     }
 
 }
@@ -67,17 +116,24 @@ export default {
 
 <style scoped>
 #button {
-  background-color: #87ebd3;
-  color: #ffff;
+  background-color: #87ebd3!important;
+  color: rgb(88, 87, 87)!important;
   border: none;
   transition-duration: 0.4s;
   width: 170px;
+  text-transform: none;
 }
 
 #button:hover {
-  background-color: rgb(212, 212, 212);
-  color: black;
+  background-color: rgb(212, 212, 212)!important;
+  color:white!important;
 }
+
+#avatar {
+  color:white!important;
+  background-color:grey!important;
+}
+
 
 </style>
 
